@@ -3,7 +3,7 @@
 class Array
   # duplicate of this array without a specific index
   def without_at(i)
-    dup.then { _1.delete_at(i); _1 }
+    dup.tap { _1.delete_at(i) }
   end
 end
 
