@@ -59,28 +59,34 @@ class Grid
     end
   end
 
-  def north(v=cursor)
-    move(Vector[-1,0], v)
-  end
+  CARDINAL = {
+    north: Vector[-1,0],
+    east: Vector[0,1],
+    south: Vector[1,0],
+    west: Vector[0,-1],
+  }
+  DIAGONAL = {
+    northeast: Vector[-1,1],
+    southeast: Vector[1,1],
+    southwest: Vector[1,-1],
+    northwest: Vector[-1,-1],
+  }
 
-  def east(v=cursor)
-    move(Vector[0,1], v)
-  end
-
-  def south(v=cursor)
-    move(Vector[1,0], v)
-  end
-  
-  def west(v=cursor)
-    move(Vector[0,-1], v)
+  def directions(diagonal: false)
+    diagonal ? CARDINAL.merge(DIAGONAL) : CARDINAL
   end
 
   # Get all the neighbours of the given vector (or cursor) that are in bounds.
   # If a block is given, return only the ones for which that block returns true
-  def neighbours(v=cursor)
-    [north(v), east(v), south(v), west(v)].compact.then do |n|
+  def neighbours(v=cursor, diagonal: false)
+    directions(diagonal: diagonal).map {|_,m| move(m,v)}.compact.then do |n|
       block_given? ? n.select {|v| yield v,self[v]} : n
     end
+  end
+
+  # Get the subset of neighbours that have this char
+  def neighbours_with_char(char, v=cursor)
+    neighbours(v) {|v,c| c == char}
   end
 
   def corners
