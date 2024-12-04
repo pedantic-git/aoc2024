@@ -76,6 +76,12 @@ class Grid
     diagonal ? CARDINAL.merge(DIAGONAL) : CARDINAL
   end
 
+  # Just the diagonal directions
+  def diagonals
+    DIAGONAL
+  end
+
+
   # Get all the neighbours of the given vector (or cursor) that are in bounds.
   # If a block is given, return only the ones for which that block returns true
   def neighbours(v=cursor, diagonal: false)
