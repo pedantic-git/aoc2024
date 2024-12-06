@@ -49,6 +49,7 @@ class Grid
   # Move by the given Vector and return the new coordinates or nil if out of bounds
   # Doesn't update the cursor - use move! if you want to do that
   def move(m, v=cursor)
+    m = directions[m] if m.kind_of? Symbol
     (v + m).then {_1 if @cells.key? _1}
   end
 
