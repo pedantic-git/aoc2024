@@ -9,7 +9,7 @@ class Grid
   include Enumerable
   extend Forwardable
 
-  def_delegators :@cells, :each
+  def_delegators :@cells, :each, :key?
 
   attr_reader :cursor, :nw_corner, :se_corner
   attr_accessor :cells
@@ -19,7 +19,7 @@ class Grid
     if io_or_cells.kind_of? Hash
       @cells = io_or_cells
     else
-      io_or_cells.each_with_index {|l,y| l.chomp.chars.each_with_index {|c,x| self[y,x] = c}}
+      io_or_cells.each_with_index {|l,y| l.chomp.chars.each_with_index {|c,x| load_cell(c,y,x)}}
     end
     @cursor = nil
     set_corners!
@@ -159,7 +159,11 @@ class Grid
 
   protected
 
-  # Set the width and height based on what's in there
+  # Load a specific cell - override this if you want to do something else
+  # with the data
+  def load_cell(c,y,x)
+    self[y,x] = c
+  end
 
   # Converts an array containing either y,x or just a vector into a vector
   def cast_vector(arr)
