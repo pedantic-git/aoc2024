@@ -9,7 +9,7 @@ class Grid
   include Enumerable
   extend Forwardable
 
-  def_delegators :@cells, :each, :key?
+  def_delegators :@cells, :each, :key?, :select
 
   attr_reader :cursor, :nw_corner, :se_corner
   attr_accessor :cells
@@ -101,7 +101,12 @@ class Grid
   end
 
   def to_s
-    nw_corner[0].upto(se_corner[0]).map {|y| nw_corner[1].upto(se_corner[1]).map {|x| self[y,x].colorize(color(Vector[y,x], self[y,x]))}.join}.join("\n")
+    nw_corner[0].upto(se_corner[0]).map {|y| nw_corner[1].upto(se_corner[1]).map {|x| render(self[y,x],y,x)}.join}.join("\n")
+  end
+
+  # Override this in subclasses to change how a cell is rendered
+  def render(c,y,x)
+    c.colorize(color(Vector[y,x], c))
   end
 
   # Override this in subclasses to colorize a cell
