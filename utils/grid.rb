@@ -73,8 +73,12 @@ class Grid
     northwest: Vector[-1,-1],
   }
 
-  def directions(diagonal: false)
+  def self.directions(diagonal: false)
     diagonal ? CARDINAL.merge(DIAGONAL) : CARDINAL
+  end
+
+  def directions(diagonal: false)
+    self.class.directions(diagonal: diagonal)
   end
 
   # Just the diagonal directions

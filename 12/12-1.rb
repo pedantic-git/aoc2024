@@ -2,6 +2,14 @@
 
 require_relative '../utils/grid'
 
+class RegionSet < Set
+
+  def price
+    length * sum {|x| Grid.directions.count {|_,m| !include? x+m} }
+  end
+
+end
+
 class Farm < Grid
 
   attr_reader :regions
@@ -35,13 +43,14 @@ class Farm < Grid
     end      
   end
 
-  def price(region)
-    squares = Set.new(regions.keys.select {regions[_1] == region})
-    squares.length * squares.sum {|x| directions.count {|_,m| !squares.include? x+m} }
+  # Get all the regions as RegionSet objects in a hash with the key being the
+  # region number
+  def region_sets
+    @region_sets ||= regions.inject({}) {|h,(v,i)| h[i] ||= RegionSet.new; h[i] << v; h}
   end
 
   def total_price
-    1.upto(n_regions).sum { price _1 }
+    region_sets.values.sum(&:price)
   end
 
   REGION_COLORS = {0 => :red, 1 => :cyan, 2 => :magenta, 3 => :green, 4 => :blue, 5 => :yellow, 6 => :light_red, 7 => :light_cyan, 8 => :light_green, 9 => :light_blue}
