@@ -8,6 +8,14 @@ class RegionSet < Set
     length * sum {|x| Grid.directions.count {|_,m| !include? x+m} }
   end
 
+  def fence_segments
+    flat_map {|x| Grid.directions.map {|d,m| include? x+m ? nil : d}.compact}
+  end
+
+  def discount_price
+    length * fence_segments.length
+  end
+
 end
 
 class Farm < Grid
@@ -53,6 +61,10 @@ class Farm < Grid
     region_sets.values.sum(&:price)
   end
 
+  def total_discount_price
+    region_sets.values.sum(&:discount_price)
+  end
+
   REGION_COLORS = {0 => :red, 1 => :cyan, 2 => :magenta, 3 => :green, 4 => :blue, 5 => :yellow, 6 => :light_red, 7 => :light_cyan, 8 => :light_green, 9 => :light_blue}
   
   def color(v,c)
@@ -64,3 +76,4 @@ end
 f = Farm.new(ARGF)
 puts f
 p f.total_price
+p f.total_discount_price
