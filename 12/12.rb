@@ -8,12 +8,25 @@ class RegionSet < Set
     length * sum {|x| Grid.directions.count {|_,m| !include? x+m} }
   end
 
-  def fence_segments
-    flat_map {|x| Grid.directions.map {|d,m| include? x+m ? nil : d}.compact}
+  def n_fence_segments
+    sum do |x|
+      # Include north or south only if there is no equivalent fence needed to the east
+      # Include east or west only if there is no equivalent fence needed to the south
+      Grid.directions.count do |d,m|
+        case d
+        when :north, :south
+          neighbour = x + Grid.directions[:east]
+          !include?(x+m) && (!include?(neighbour) || include?(neighbour+m))
+        when :east, :west
+          neighbour = x + Grid.directions[:south]
+          !include?(x+m) && (!include?(neighbour) || include?(neighbour+m))
+        end
+      end
+    end
   end
 
   def discount_price
-    length * fence_segments.length
+    length * n_fence_segments
   end
 
 end
