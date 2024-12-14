@@ -4,6 +4,7 @@ require_relative '../utils/grid'
 
 WIDTH = 101
 HEIGHT = 103
+MID_COLUMN = WIDTH / 2
 
 class Robot
   attr_accessor :pos, :vel
@@ -55,11 +56,21 @@ class Bathroom < Grid
       '.'.colorize(:grey)
     end
   end
+
+  # The bathroom is suspicious if more 30 squares in row 86 contain a robot
+  def suspicious?
+    (0..WIDTH-1).count {|x| self[86, x] > 0} > 30
+  end
 end
 
 b = Bathroom.new(ARGF)
 loop do
-  b.move(100)
-  puts b.moves
-  puts b
+  b.move
+  if b.moves % 10000 == 0
+    puts b.moves
+  end 
+  if b.suspicious?
+    puts b.moves
+    puts b
+  end
 end
