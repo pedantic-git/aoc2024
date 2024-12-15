@@ -15,13 +15,13 @@ class Grid
   attr_accessor :cells
 
   def initialize(io_or_cells=nil)
+    @cursor = nil
     @cells = {}
     if io_or_cells.kind_of? Hash
       @cells = io_or_cells
     else
       io_or_cells.each_with_index {|l,y| l.chomp.chars.each_with_index {|c,x| load_cell(c,y,x)}}
     end
-    @cursor = nil
     set_corners!
   end
 
