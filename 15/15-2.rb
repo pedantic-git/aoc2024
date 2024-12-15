@@ -91,14 +91,47 @@ class Warehouse < Grid
         false
       end
     else
-      # TODO
-      false
+      # First, we need to find the other half of the box
+      whole_box = self[v] == '[' ? [v, v+directions[:east]] : [v+directions[:west], v]
+      p whole_box
+      box_space = [whole_box[0]+dir, whole_box[1]+dir]
+      p box_space
+      case [self[box_space[0]], self[box_space[1]]]
+      when ['.','.']
+        # Space to move the box into
+        self[box_space[0]] = '['
+        self[box_space[1]] = ']'
+        self[whole_box[0]] = self[whole_box[1]] = '.'
+        return true
+      when ['[', ']']
+        # Box aligned with this one
+        if move_box(box_space[0]+dir, dir)
+          self[box_space[0]] = '['
+          self[box_space[1]] = ']'
+          self[whole_box[0]] = self[whole_box[1]] = '.'
+          return true
+        else
+          return false
+        end
+      when [']', '[']
+        # Two boxes
+        if move_box(box_space[0]+dir, dir) && move_box(box_space[1]+dir, dir)
+          self[box_space[0]] = '['
+          self[box_space[1]] = ']'
+          self[whole_box[0]] = self[whole_box[1]] = '.'
+          return true
+        else
+          return false
+        end
+      else
+        return false
+      end
     end
   end
 
   # Call move_robot! on every instruction
   def move_all!
-    instructions.each { move_robot! _1}
+    instructions.each { move_robot! _1; puts self}
   end
 
   # Get the GPS of all the boxes
@@ -109,9 +142,6 @@ class Warehouse < Grid
 end
 
 w = Warehouse.new(ARGF)
-#w.move_all!
-w.move_robot!('^')
-w.move_robot!('<')
-w.move_robot!('<')
-puts w
+w.move_all!
+#puts w
 p w.gps
