@@ -145,7 +145,7 @@ class Grid
       end
       @openset.delete(current)
       neighbours(current, &block).each do |candidate|
-        tentative = @gscore[current] + edge(current, candidate)
+        tentative = @gscore[current] + edge(current, candidate, @camefrom[current])
         if tentative < @gscore[candidate]
           @camefrom[candidate] = current
           @gscore[candidate] = tentative
@@ -159,10 +159,10 @@ class Grid
 
   def heuristic(from, to, start, stop)
     # The default heuristic is just the number of steps east + south to stop
-    (stop - v).reduce(:+)
+    (stop - from).reduce(:+)
   end
 
-  def edge(v1, v2)
+  def edge(current, candidate, previous)
     1
   end
 
