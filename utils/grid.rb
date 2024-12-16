@@ -86,6 +86,24 @@ class Grid
     DIAGONAL
   end
 
+  # Turn a direction matrix right 90 degrees
+  def right(v)
+    {
+      directions[:north] => directions[:east], 
+      directions[:east] => directions[:south], 
+      directions[:south]=> directions[:west],
+      directions[:west] => directions[:north]
+    }[v]
+  end
+  # and left
+  def left(v)
+    {
+      directions[:north] => directions[:west], 
+      directions[:west] => directions[:south], 
+      directions[:south]=> directions[:east],
+      directions[:east] => directions[:north]
+    }[v]
+  end
 
   # Get all the neighbours of the given vector (or cursor) that are in bounds.
   # If a block is given, return only the ones for which that block returns true
