@@ -145,7 +145,7 @@ class Grid
       end
       @openset.delete(current)
       neighbours(current, &block).each do |candidate|
-        tentative = @gscore[current] + edge(current, candidate, @camefrom[current])
+        tentative = @gscore[current] + edge(current, candidate, @camefrom)
         if tentative < @gscore[candidate]
           @camefrom[candidate] = current
           @gscore[candidate] = tentative
