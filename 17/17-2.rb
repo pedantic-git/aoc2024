@@ -1,0 +1,95 @@
+#!/usr/bin/env ruby
+
+class Cpu
+  
+  INSTRUCTIONS = %i[adv bxl bst jnz bxc out bdv cdv]
+
+  def initialize(str)
+    @initial_a = 35_184_372_088_832 # this is the first 16-digit output
+    @initial_b = /Register B: (\d+)/.match(str)[1].to_i
+    @initial_c = /Register B: (\d+)/.match(str)[1].to_i
+    @i = /Program: (.*)/.match(str)[1].split(',').map(&:to_i)
+    reset!
+  end
+
+  def reset!
+    @pc = 0
+    @a = @initial_a
+    @b = @initial_b
+    @c = @initial_c
+    @output = []
+  end
+
+  def find_a!
+    while @output != @i
+      reset!
+      run!
+      p [@initial_a, @output]
+      @initial_a += 1
+    end
+    return @initial_a - 1 # reverse the last increment
+  end
+
+  def run!
+    public_send(INSTRUCTIONS[@i[@pc]]) while @i[@pc]
+    @output.join(',')
+  end
+
+  def adv
+    @a >>= combo_operand
+  end
+
+  def bxl
+    @b ^= literal_operand 
+  end
+
+  def bst
+    @b = combo_operand % 8
+  end
+
+  def jnz
+    literal_operand.then {@pc = _1 unless @a == 0}
+  end
+
+  def bxc
+    @b ^= @c
+    literal_operand
+  end
+
+  def out
+    @output << combo_operand % 8
+  end
+
+  def bdv
+    @b = @a >> combo_operand
+  end
+
+  def cdv
+    @c = @a >> combo_operand
+  end
+
+  private
+
+  def literal_operand
+    @i[@pc+1].tap {@pc +=2}
+  end
+
+  def combo_operand
+    case lo = literal_operand
+    when 4
+      @a
+    when 5
+      @b
+    when 6
+      @c
+    when 7
+      fail "Error"
+    else
+      lo
+    end
+  end
+  
+end
+
+c = Cpu.new(ARGF.read)
+puts c.find_a!
