@@ -1,0 +1,81 @@
+#!/usr/bin/env ruby
+
+
+
+
+# Brute force ain't gonna cut it - we need to simplify this program
+
+# Program: 2,4,1,1,7,5,4,4,1,4,0,3,5,5,3,0
+# In pseudocode:
+# while a != 0
+#   b = a % 8 # b is last 3 digits of a
+#   b ^= 1 # bitswap the last bit of b
+#   c = a >> b # no further expl
+#   b ^= c # 
+#   b ^= 4
+#   a >>= 3 # shrink a by 3 bits
+#   output << b%8
+# end
+
+# Rules for each digit that must be true
+# i = index of digit, n = value
+# solve for a
+
+# 1. ai == (a>>3*i)
+# 2. b1 == (ai % 8) ^ 1
+# 3. c == ai>>b1
+# 4. b2 == b1^c^4
+# 5. n == b2%8
+
+# 2. b1 == ((a>>3*i) % 8)^1
+# 3. c == (a>>3*i) >> ((a>>3*i)%8)^1
+# 4. b2 == (((a>>3*i) % 8)^1) ^ ((a>>3*i) >> ((a>>3*i)%8)^1) ^ 4
+
+# 5. n == ((((a>>3*i) % 8)^1) ^ ((a>>3*i) >> ((a>>3*i)%8)^1) ^ 4) % 8
+
+# This is terrifyingly complex... time to try something else
+
+# To output 2
+# b needs to end 110 ^ c
+# c is a minus the last n digits
+# n is a%8 with last bit bitswapped
+
+# a%8 -> n -> c (end of a) (when outputting 2)
+# 000 -> 001 -> 111x
+# 001 -> 000 -> 110
+# 010 -> 011 -> 101xxx
+# 011 -> 010 -> 100xx
+# 100 -> 101 -> 011xxxxx
+# 101 -> 100 -> 010xxxx
+# 110 -> 111 -> 001xxxxxxx
+# 111 -> 110 -> 000xxxxxx
+
+# To output 4
+# b needs to end 000 ^ c
+
+# a%8 -> n -> c (end of a) (when outputting 4)
+# 000 -> 001 -> 001x
+# 001 -> 000 -> 000
+# 010 -> 011 -> 011xxx
+# 011 -> 010 -> 010xx
+# 100 -> 101 -> 101xxxxx
+# 101 -> 100 -> 100xxxx
+# 110 -> 111 -> 111xxxxxxx
+# 111 -> 110 -> 110xxxxxx
+
+# To output 1
+# b needs to end 101 ^ c
+
+# a%8 -> n -> c (end of a) (when outputting 1)
+# 000 -> 001 -> 100x
+# 001 -> 000 -> 101
+# 010 -> 011 -> 110xxx
+# 011 -> 010 -> 111xx
+# 100 -> 101 -> 000xxxxx
+# 101 -> 100 -> 001xxxx
+# 110 -> 111 -> 010xxxxxxx
+# 111 -> 110 -> 011xxxxxx
+
+# 2 = 101_010 = 42
+# 2,4,1 = 1_000_101_010 = 554 
+# 2,4,1,1 = 1_001_000_101_010 = 4650

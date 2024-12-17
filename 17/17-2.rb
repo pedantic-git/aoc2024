@@ -4,35 +4,18 @@ class Cpu
   
   INSTRUCTIONS = %i[adv bxl bst jnz bxc out bdv cdv]
 
-  def initialize(str)
-    @initial_a = 35_184_372_088_832 # this is the first 16-digit output
-    @initial_b = /Register B: (\d+)/.match(str)[1].to_i
-    @initial_c = /Register B: (\d+)/.match(str)[1].to_i
-    @i = /Program: (.*)/.match(str)[1].split(',').map(&:to_i)
-    reset!
-  end
-
-  def reset!
+  def initialize(a, b, c, i)
     @pc = 0
-    @a = @initial_a
-    @b = @initial_b
-    @c = @initial_c
+    @a = a
+    @b = b
+    @c = c
+    @i = i
     @output = []
-  end
-
-  def find_a!
-    while @output != @i
-      reset!
-      run!
-      p [@initial_a, @output]
-      @initial_a += 1
-    end
-    return @initial_a - 1 # reverse the last increment
   end
 
   def run!
     public_send(INSTRUCTIONS[@i[@pc]]) while @i[@pc]
-    @output.join(',')
+    @output
   end
 
   def adv
@@ -91,5 +74,24 @@ class Cpu
   
 end
 
-c = Cpu.new(ARGF.read)
-puts c.find_a!
+prog = /Program: (.*)/.match(ARGF.read)[1].split(',').map(&:to_i)
+
+# First, find all the values of A up to 11 bits (3 + 8, the maximum c
+# can shift by)
+vals = (0..7).inject({}) do |h,n|
+  h.update(n => (0..2047).select {|a| Cpu.new(a, 0, 0, prog).run!.last == n})
+end
+
+# For each number in the program, find a value for a that outputs it and
+# prior numbers
+possible_a = vals[prog.shift]
+prog.each_with_index do |n,i|
+  p [n,i]
+  i -= 1 # we've shifted one off so the indexes are off by one
+
+  new_poss = possible_a.product(vals[n]).map {|r,l| (l << 3*i) | r}
+  p new_poss.length
+  # possible_a = new_poss.dup
+  # p possible_a
+end
+#p possible_a
