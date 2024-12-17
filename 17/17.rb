@@ -23,7 +23,7 @@ class Cpu
   end
 
   def bxl
-    @b ^= combo_operand 
+    @b ^= literal_operand 
   end
 
   def bst
