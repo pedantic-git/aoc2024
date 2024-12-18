@@ -5,6 +5,8 @@ require 'colorize'
 class Grid
   class OutOfBoundsError < StandardError
   end
+  class NoPathAvailableError < StandardError
+  end
   
   include Enumerable
   extend Forwardable
@@ -172,7 +174,7 @@ class Grid
         end
       end
     end
-    raise "Failed to find path"
+    raise NoPathAvailableError, "Failed to find path"
   end
 
   def heuristic(from, to, start, stop)
