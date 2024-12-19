@@ -1,5 +1,2 @@
 #!/usr/bin/env ruby
-
-towels = ARGF.readline.chomp
-re = Regexp.new("\\A(#{towels.split(', ').join('|')})+\\Z".freeze)
-p ARGF.count { re.match?(_1) }
+p %r{\A(#{ARGF.gets.gsub(', ','|')})+\Z}.then {|r| ARGF.count { r=~_1 }}
