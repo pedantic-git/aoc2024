@@ -109,9 +109,10 @@ class Grid
 
   # Get all the neighbours of the given vector (or cursor) that are in bounds.
   # If a block is given, return only the ones for which that block returns true
+  # Block arguments are v,c,current,current_c
   def neighbours(v=cursor, diagonal: false)
     directions(diagonal: diagonal).map {|_,m| move(m,v)}.compact.then do |n|
-      block_given? ? n.select {|v| yield v,self[v]} : n
+      block_given? ? n.select {|v2| yield v2,self[v2],v,self[v]} : n
     end
   end
 
