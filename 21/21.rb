@@ -1,198 +1,72 @@
 #!/usr/bin/env ruby
 
-# If all other distances are equal, prioritize them in this order: > ^ v <
-# Special case: <v< beats v<<
-KEYPAD = {
-  'A' => {
-    'A' => 'A',
-    '0' => '<A',
-    '1' => '^<<A',
-    '2' => '^<A',
-    '3' => '^A',
-    '4' => '^^<<A',
-    '5' => '^^<A',
-    '6' => '^^A',
-    '7' => '^^^<<A',
-    '8' => '^^^<A',
-    '9' => '^^^A',
-  },
-  '0' => {
-    'A' => '>A',
-    '0' => 'A',
-    '1' => '^<A',
-    '2' => '^A',
-    '3' => '>^A',
-    '4' => '^^<A',
-    '5' => '^^A',
-    '6' => '>^^A',
-    '7' => '^^^<A',
-    '8' => '^^^A',
-    '9' => '>^^^A',
-  },
-  '1' => {
-    'A' => '>>vA',
-    '0' => '>vA',
-    '1' => 'A',
-    '2' => '>A',
-    '3' => '>>A',
-    '4' => '^A',
-    '5' => '>^A',
-    '6' => '>>^A',
-    '7' => '^^A',
-    '8' => '>^^A',
-    '9' => '>>^^A'
-  },
-  '2' => {
-    'A' => '>vA',
-    '0' => 'vA',
-    '1' => '<A',
-    '2' => 'A',
-    '3' => '>A',
-    '4' => '^<A',
-    '5' => '^A',
-    '6' => '^>A',
-    '7' => '^^<A',
-    '8' => '^^A',
-    '9' => '>^^A',
-  },
-  '3' => {
-    'A' => 'vA',
-    '0' => 'v<A',
-    '1' => '<<A',
-    '2' => '<A',
-    '3' => 'A',
-    '4' => '^<<A',
-    '5' => '^<A',
-    '6' => '^A',
-    '7' => '^^<<A',
-    '8' => '^^<A',
-    '9' => '^^A',
-  },
-  '4' => {
-    'A' => '>>vvA',
-    '0' => '>vvA',
-    '1' => 'vA',
-    '2' => 'v>A',
-    '3' => '>>vA',
-    '4' => 'A',
-    '5' => '>A',
-    '6' => '>>A',
-    '7' => '^A',
-    '8' => '>^A',
-    '9' => '>>^A',
-  },
-  '5' => {
-    'A' => '>vvA',
-    '0' => 'vvA',
-    '1' => 'v<A',
-    '2' => 'vA',
-    '3' => '>vA',
-    '4' => '<A',
-    '5' => 'A',
-    '6' => '>A',
-    '7' => '^<A',
-    '8' => '^A',
-    '9' => '>^A',
-  },
-  '6' => {
-    'A' => 'vvA',
-    '0' => 'vv<A',
-    '1' => 'v<<A',
-    '2' => 'v<A',
-    '3' => 'vA',
-    '4' => '<<A',
-    '5' => '<A',
-    '6' => 'A',
-    '7' => '^<<A',
-    '8' => '^<A',
-    '9' => '^A',
-  },
-  '7' => {
-    'A' => '>>vvvA',
-    '0' => '>vvvA',
-    '1' => 'vvA',
-    '2' => '>vvA',
-    '3' => '>>vvA',
-    '4' => 'vA',
-    '5' => '>vA',
-    '6' => '>>vA',
-    '7' => 'A',
-    '8' => '>A',
-    '9' => '>>A',
-  },
-  '8' => {
-    'A' => '>vvvA',
-    '0' => 'vvvA',
-    '1' => 'vv<A',
-    '2' => 'vvA',
-    '3' => '>vvA',
-    '4' => 'v<A',
-    '5' => 'vA',
-    '6' => '>vA',
-    '7' => '<A',
-    '8' => 'A',
-    '9' => '>A',
-  },
-  '9' => {
-    'A' => 'vvvA',
-    '0' => 'vvv<A',
-    '1' => 'vv<<A',
-    '2' => 'vv<A',
-    '3' => 'vvA',
-    '4' => 'v<<A',
-    '5' => 'v<A',
-    '6' => 'vA',
-    '7' => '<<A',
-    '8' => '<A',
-    '9' => 'A',
-  },
-}
+require_relative '../utils/grid'
+require 'pp'
 
-DIR = {
-  'A' => {
-    'A' => 'A',
-    '^' => '<A',
-    'v' => 'v<A',
-    '<' => '<v<A',
-    '>' => 'vA'
-  },
-  '^' => {
-    'A' => '>A',
-    '^' => 'A',
-    'v' => 'vA',
-    '<' => 'v<A',
-    '>' => 'v>A'
-  },
-  'v' => {
-    'A' => '>^A',
-    '^' => '^A',
-    'v' => 'A',
-    '<' => '<A',
-    '>' => '>A'
-  },
-  '>' => {
-    'A' => '^A',
-    '^' => '^<A',
-    'v' => '<A',
-    '<' => '<<A',
-    '>' => 'A'
-  },
-  '<' => {
-    'A' => '>>^A',
-    '^' => '>^A',
-    'v' => '>A',
-    '<' => 'A',
-    '>' => '>>A'
-  }
-}
+class Keypad < Grid
 
-def enter(code, controller=DIR)
-  puts code
-  "A#{code}".chars.each_cons(2).map {controller[_1][_2]}.join
+  DIR_SYM = {dir[:north] => '^', dir[:east] => '>', dir[:south] => 'v', dir[:west] => '<'}
+
+  attr_reader :locs
+
+  def initialize
+    super(pattern)
+    @locs = cells.invert
+  end
+
+  # Get all the paths from sym1 to sym2 as a string of direction
+  def paths_at_step(sym1, sym2)
+    return ["A"] if sym1 == sym2
+    all_paths(locs[sym1], locs[sym2]) {|v,c| c != 'X'}.map {|path| path.each_cons(2).map {|l,r| DIR_SYM[r-l]}.join + "A"}
+  end
+
+  # Get all the possible paths for a given string
+  def paths(str)
+    f, *r = str.chars.each_cons(2).map {|l,r| paths_at_step(l,r)}
+    f.product(*r).map(&:join)
+  end
+
 end
 
-def complexity(code)
-  enter(enter(enter(code, KEYPAD))).tap {puts _1}.length.tap {|l| puts l} * code.to_i
+class NumericKeypad < Keypad
+  def pattern = ["789", "456", "123", "X0A"]
 end
 
-p ARGF.sum {complexity _1.chomp}
+class DirKeypad < Keypad
+  def pattern = ["X^A", "<v>"]
+end
+
+class Robots
+  attr_reader :nk, :dk, :codes
+  def initialize(io)
+    @nk = NumericKeypad.new
+    @dk = DirKeypad.new
+    @codes = io.readlines.map(&:chomp)
+  end
+
+  def shortest_path(input)
+    min = Float::INFINITY
+    min_input = Float::INFINITY
+    keypad_paths = nk.paths("A#{input}").sort_by(&:length)
+    # This is a heuristic - skip ones where the input is 4+ chars longer
+    # than the min we've found so far
+    keypad_paths.delete_if {_1.length > keypad_paths[0].length + 4}
+    r2_paths = keypad_paths.flat_map {|r2| dk.paths("A#{r2}") }.sort_by(&:length)
+    # Another heuristic
+    r2_paths.delete_if {_1.length > r2_paths[0].length + 2}
+    r2_paths.each do |r1|
+      if (new_min = dk.paths("A#{r1}").min_by(&:length).length) < min
+        min = new_min
+        min_input = r1.length
+      end
+    end
+    min
+  end
+
+  def complexity
+    codes.sum { _1.to_i * shortest_path(_1) }
+  end
+end
+
+r = Robots.new(ARGF)
+p r.complexity

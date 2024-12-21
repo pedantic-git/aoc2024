@@ -82,6 +82,9 @@ class Grid
   def directions(diagonal: false)
     self.class.directions(diagonal: diagonal)
   end
+  class <<self
+    alias_method :dir, :directions
+  end
 
   # Just the diagonal directions
   def diagonals
@@ -185,6 +188,18 @@ class Grid
 
   def edge(current, candidate, previous)
     1
+  end
+
+  # Use BFS to get all the possible paths from f to t
+  def all_paths(f, t, seen=[f], &block)
+    n = neighbours(f) do |v2,c2,v1,c1|
+      (!block_given? || block.call(v2,c2,v1,c1)) && !seen.include?(v2)
+    end
+    if n.find {|v,c| v==t}
+      return [seen+[t]]
+    else
+      n.flat_map {|v,c| all_paths(v, t, seen + [v], &block)}
+    end
   end
 
   protected
