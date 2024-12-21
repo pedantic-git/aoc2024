@@ -183,7 +183,7 @@ class Grid
     (stop - from).reduce(:+)
   end
 
-  def edge(current, candidate, previous)
+  def edge(current, candidate, previous=nil)
     1
   end
 

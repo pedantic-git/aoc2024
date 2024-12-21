@@ -1,198 +1,48 @@
 #!/usr/bin/env ruby
 
-# If all other distances are equal, prioritize them in this order: > ^ v <
-# Special case: <v< beats v<<
-KEYPAD = {
-  'A' => {
-    'A' => 'A',
-    '0' => '<A',
-    '1' => '^<<A',
-    '2' => '^<A',
-    '3' => '^A',
-    '4' => '^^<<A',
-    '5' => '^^<A',
-    '6' => '^^A',
-    '7' => '^^^<<A',
-    '8' => '^^^<A',
-    '9' => '^^^A',
-  },
-  '0' => {
-    'A' => '>A',
-    '0' => 'A',
-    '1' => '^<A',
-    '2' => '^A',
-    '3' => '>^A',
-    '4' => '^^<A',
-    '5' => '^^A',
-    '6' => '>^^A',
-    '7' => '^^^<A',
-    '8' => '^^^A',
-    '9' => '>^^^A',
-  },
-  '1' => {
-    'A' => '>>vA',
-    '0' => '>vA',
-    '1' => 'A',
-    '2' => '>A',
-    '3' => '>>A',
-    '4' => '^A',
-    '5' => '>^A',
-    '6' => '>>^A',
-    '7' => '^^A',
-    '8' => '>^^A',
-    '9' => '>>^^A'
-  },
-  '2' => {
-    'A' => '>vA',
-    '0' => 'vA',
-    '1' => '<A',
-    '2' => 'A',
-    '3' => '>A',
-    '4' => '^<A',
-    '5' => '^A',
-    '6' => '^>A',
-    '7' => '^^<A',
-    '8' => '^^A',
-    '9' => '>^^A',
-  },
-  '3' => {
-    'A' => 'vA',
-    '0' => 'v<A',
-    '1' => '<<A',
-    '2' => '<A',
-    '3' => 'A',
-    '4' => '^<<A',
-    '5' => '^<A',
-    '6' => '^A',
-    '7' => '^^<<A',
-    '8' => '^^<A',
-    '9' => '^^A',
-  },
-  '4' => {
-    'A' => '>>vvA',
-    '0' => '>vvA',
-    '1' => 'vA',
-    '2' => 'v>A',
-    '3' => '>>vA',
-    '4' => 'A',
-    '5' => '>A',
-    '6' => '>>A',
-    '7' => '^A',
-    '8' => '>^A',
-    '9' => '>>^A',
-  },
-  '5' => {
-    'A' => '>vvA',
-    '0' => 'vvA',
-    '1' => 'v<A',
-    '2' => 'vA',
-    '3' => '>vA',
-    '4' => '<A',
-    '5' => 'A',
-    '6' => '>A',
-    '7' => '^<A',
-    '8' => '^A',
-    '9' => '>^A',
-  },
-  '6' => {
-    'A' => 'vvA',
-    '0' => 'vv<A',
-    '1' => 'v<<A',
-    '2' => 'v<A',
-    '3' => 'vA',
-    '4' => '<<A',
-    '5' => '<A',
-    '6' => 'A',
-    '7' => '^<<A',
-    '8' => '^<A',
-    '9' => '^A',
-  },
-  '7' => {
-    'A' => '>>vvvA',
-    '0' => '>vvvA',
-    '1' => 'vvA',
-    '2' => '>vvA',
-    '3' => '>>vvA',
-    '4' => 'vA',
-    '5' => '>vA',
-    '6' => '>>vA',
-    '7' => 'A',
-    '8' => '>A',
-    '9' => '>>A',
-  },
-  '8' => {
-    'A' => '>vvvA',
-    '0' => 'vvvA',
-    '1' => 'vv<A',
-    '2' => 'vvA',
-    '3' => '>vvA',
-    '4' => 'v<A',
-    '5' => 'vA',
-    '6' => '>vA',
-    '7' => '<A',
-    '8' => 'A',
-    '9' => '>A',
-  },
-  '9' => {
-    'A' => 'vvvA',
-    '0' => 'vvv<A',
-    '1' => 'vv<<A',
-    '2' => 'vv<A',
-    '3' => 'vvA',
-    '4' => 'v<<A',
-    '5' => 'v<A',
-    '6' => 'vA',
-    '7' => '<<A',
-    '8' => '<A',
-    '9' => 'A',
-  },
-}
+require_relative '../utils/grid'
 
-DIR = {
-  'A' => {
-    'A' => 'A',
-    '^' => '<A',
-    'v' => 'v<A',
-    '<' => '<v<A',
-    '>' => 'vA'
-  },
-  '^' => {
-    'A' => '>A',
-    '^' => 'A',
-    'v' => 'vA',
-    '<' => 'v<A',
-    '>' => 'v>A'
-  },
-  'v' => {
-    'A' => '>^A',
-    '^' => '^A',
-    'v' => 'A',
-    '<' => '<A',
-    '>' => '>A'
-  },
-  '>' => {
-    'A' => '^A',
-    '^' => '^<A',
-    'v' => '<A',
-    '<' => '<<A',
-    '>' => 'A'
-  },
-  '<' => {
-    'A' => '>>^A',
-    '^' => '>^A',
-    'v' => '>A',
-    '<' => 'A',
-    '>' => '>>A'
-  }
-}
+class Keypad < Grid
+  attr_reader :locs, :robot
 
-def enter(code, controller=DIR)
-  puts code
-  "A#{code}".chars.each_cons(2).map {controller[_1][_2]}.join
+  def initialize(n_robots)
+    super(shape)
+    @locs = cells.invert
+    @robot = n_robots.zero? ? nil : DirKeypad.new(n_robots - 1)
+  end
+
+  def shape = []
+
+  def between(x,y)
+    astar(locs[x], locs[y]) {|v,c| c != 'X'}.each_cons(2).sum {|f,t| edge f,t}
+  end
 end
 
-def complexity(code)
-  enter(enter(enter(code, KEYPAD))).tap {puts _1}.length.tap {|l| puts l} * code.to_i
+class NumericKeypad < Keypad
+  def shape = ["789", "456", "123", "X0A"]
+
+  def dir_symbol(dir)
+    {directions[:north] => '^', directions[:east] => '>', 
+     directions[:south] => 'v', directions[:west] => '<'}[dir]
+  end
+
+  def edge(current, candidate, previous=nil)
+    symbol_to_press = dir_symbol(candidate-current)
+    robot ? robot.between('A', symbol_to_press) + robot.between(symbol_to_press, 'A') : 1
+  end
 end
 
-p ARGF.sum {complexity _1.chomp}
+class DirKeypad < Keypad
+  def shape = ["X^A", "<v>"]
+
+  def edge(current, candidate, previous=nil)
+    1 + (robot ? robot.between(self[current], self[candidate]) : 0)
+  end
+end
+
+nk = NumericKeypad.new(2)
+puts nk.between('A', '0')
+
+# NumericKeypad = <A = 2
+# Robot1        = v<<A >>^A = 6
+# Robot2        = v<A v<<A A >>^A A <A >A = 17
