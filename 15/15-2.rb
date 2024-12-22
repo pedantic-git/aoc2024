@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require_relative '../utils/grid'
+require 'pry'
 
 class Warehouse < Grid
 
@@ -41,10 +42,10 @@ class Warehouse < Grid
   end
 
   DIRS = {
-    '^' => directions[:north],
-    '>' => directions[:east],
-    'v' => directions[:south],
-    '<' => directions[:west]
+    '^' => dir[:north],
+    '>' => dir[:east],
+    'v' => dir[:south],
+    '<' => dir[:west]
   }
 
   # Move the robot (and any boxes) in the specified direction, if possible
@@ -68,70 +69,130 @@ class Warehouse < Grid
     end
   end
 
-  def move_box(v, dir)
-    case dir
-    when directions[:west], directions[:east]
-      case self[v+2*dir]
+  def move_box(v, m)
+    # First - get the rest of the box
+    box = if self[v] == '['
+      [v, v+dir[:east]]
+    else
+      [v+dir[:west], v]
+    end
+    case m
+    when dir[:west]
+      case self[box[0]+m]
       when '.'
-        # Space to move the box into
-        self[v+2*dir] = self[v+dir]
-        self[v+dir] = self[v]
-        self[v] = '.'
-        return true
-      when '[', ']'
-        if move_box(v+2*dir, dir)
-          self[v+2*dir] = self[v+dir]
-          self[v+dir] = self[v]
-          self[v] = '.'
-          return true
+        self[box[0]+m] = '['
+        self[box[0]] = ']'
+        self[box[1]] = '.'
+        true
+      when ']'
+        move_box(box[0]+m, m) && move_box(box[0], m)
+      else
+        false
+      end
+    when dir[:east]
+      case self[box[1]+m]
+      when '.'
+        self[box[1]+m] = ']'
+        self[box[1]] = '['
+        self[box[0]] = '.'
+        true
+      when '['
+        move_box(box[1]+m, m) && move_box(box[0], m)
+      else
+        false
+      end
+    when dir[:north], dir[:south]
+      case [self[box[0]+m], self[box[1]+m]]
+      when ['.', '.']
+        self[box[0]] = self[box[1]] = '.'
+        self[box[0]+m] = '['
+        self[box[1]+m] = ']'
+        true
+      when ['[', ']']
+        move_box(box[0]+m, m) && move_box(box[0], m)
+      when [']', '[']
+        # if moving box 0 succeeds but moving box 1 fails then we have to
+        # undo the first
+        if move_box(box[0]+m, m)
+          if move_box(box[1]+m, m)
+            move_box(box[0], m)
+          else
+            move_box(box[0]+m+m, -m)
+            false
+          end
         else
-          return false
+          false
         end
       else
         false
       end
-    else
-      # First, we need to find the other half of the box
-      whole_box = self[v] == '[' ? [v, v+directions[:east]] : [v+directions[:west], v]
-      p whole_box
-      box_space = [whole_box[0]+dir, whole_box[1]+dir]
-      p box_space
-      case [self[box_space[0]], self[box_space[1]]]
-      when ['.','.']
-        # Space to move the box into
-        self[box_space[0]] = '['
-        self[box_space[1]] = ']'
-        self[whole_box[0]] = self[whole_box[1]] = '.'
-        return true
-      when ['[', ']']
-        # Box aligned with this one
-        if move_box(box_space[0]+dir, dir)
-          self[box_space[0]] = '['
-          self[box_space[1]] = ']'
-          self[whole_box[0]] = self[whole_box[1]] = '.'
-          return true
-        else
-          return false
-        end
-      when [']', '[']
-        # Two boxes
-        if move_box(box_space[0]+dir, dir) && move_box(box_space[1]+dir, dir)
-          self[box_space[0]] = '['
-          self[box_space[1]] = ']'
-          self[whole_box[0]] = self[whole_box[1]] = '.'
-          return true
-        else
-          return false
-        end
-      else
-        return false
-      end
     end
   end
 
+  # def move_box(v, dir)
+  #   case dir
+  #   when directions[:west], directions[:east]
+  #     case self[v+2*dir]
+  #     when '.'
+  #       # Space to move the box into
+  #       self[v+2*dir] = self[v+dir]
+  #       self[v+dir] = self[v]
+  #       self[v] = '.'
+  #       return true
+  #     when '[', ']'
+  #       if move_box(v+2*dir, dir)
+  #         self[v+2*dir] = self[v+dir]
+  #         self[v+dir] = self[v]
+  #         self[v] = '.'
+  #         return true
+  #       else
+  #         return false
+  #       end
+  #     else
+  #       false
+  #     end
+  #   else
+  #     # First, we need to find the other half of the box
+  #     whole_box = self[v] == '[' ? [v, v+directions[:east]] : [v+directions[:west], v]
+  #     p whole_box
+  #     box_space = [whole_box[0]+dir, whole_box[1]+dir]
+  #     p box_space
+  #     case [self[box_space[0]], self[box_space[1]]]
+  #     when ['.','.']
+  #       # Space to move the box into
+  #       self[box_space[0]] = '['
+  #       self[box_space[1]] = ']'
+  #       self[whole_box[0]] = self[whole_box[1]] = '.'
+  #       return true
+  #     when ['[', ']']
+  #       # Box aligned with this one
+  #       if move_box(box_space[0]+dir, dir)
+  #         self[box_space[0]] = '['
+  #         self[box_space[1]] = ']'
+  #         self[whole_box[0]] = self[whole_box[1]] = '.'
+  #         return true
+  #       else
+  #         return false
+  #       end
+  #     when [']', '[']
+  #       # Two boxes
+  #       if move_box(box_space[0]+dir, dir) && move_box(box_space[1]+dir, dir)
+  #         self[box_space[0]] = '['
+  #         self[box_space[1]] = ']'
+  #         self[whole_box[0]] = self[whole_box[1]] = '.'
+  #         return true
+  #       else
+  #         return false
+  #       end
+  #     else
+  #       return false
+  #     end
+  #   end
+  # end
+
   # Call move_robot! on every instruction
   def move_all!
-    instructions.each { move_robot! _1; puts self}
+    instructions.each { puts _1; move_robot! _1; puts self}
   end
 
   # Get the GPS of all the boxes

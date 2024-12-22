@@ -85,6 +85,7 @@ class Grid
   class <<self
     alias_method :dir, :directions
   end
+  alias_method :dir, :directions
 
   # Just the diagonal directions
   def diagonals
