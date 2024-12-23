@@ -105,8 +105,10 @@ class Warehouse < Grid
       case [self[box[0]+m], self[box[1]+m]]
       when ['.', '.']
         true
-      when ['[', ']']
+      when ['[', ']'], [']', '.']
         can_move_box?(box[0]+m, m)
+      when ['.', '[']
+        can_move_box?(box[1]+m, m)
       when [']', '[']
         can_move_box?(box[0]+m, m) && can_move_box?(box[1]+m, m)
       else
@@ -134,6 +136,8 @@ class Warehouse < Grid
       move_box(box[0]+m, m) if self[box[0]+m] == '['
       if self[box[0]+m] == ']'
         move_box(box[0]+m, m)
+      end
+      if self[box[1]+m] == '['
         move_box(box[1]+m, m)
       end
       self[box[0]] = self[box[1]] = '.'
@@ -155,6 +159,6 @@ class Warehouse < Grid
 end
 
 w = Warehouse.new(ARGF)
+puts w
 w.move_all!
-#puts w
 p w.gps
