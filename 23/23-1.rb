@@ -15,5 +15,5 @@ from.each do |f,t|
   end
 end
 
-ts = Set.new(from.keys.grep /t/)
+ts = Set.new(from.keys.select {_1.start_with? 't'})
 p sets.count {_1.intersect? ts}
