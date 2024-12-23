@@ -69,126 +69,78 @@ class Warehouse < Grid
     end
   end
 
-  def move_box(v, m)
-    # First - get the rest of the box
-    box = if self[v] == '['
+  # Given half a box, get the whole box
+  def get_box(v)
+    if self[v] == '['
       [v, v+dir[:east]]
     else
       [v+dir[:west], v]
     end
+  end
+
+  # Can this box be moved? Don't move it unless this is true
+  def can_move_box?(v, m)
+    # First - get the rest of the box
+    box = get_box(v)
     case m
     when dir[:west]
       case self[box[0]+m]
       when '.'
-        self[box[0]+m] = '['
-        self[box[0]] = ']'
-        self[box[1]] = '.'
         true
       when ']'
-        move_box(box[0]+m, m) && move_box(box[0], m)
+        can_move_box?(box[0]+m, m)
       else
         false
       end
     when dir[:east]
       case self[box[1]+m]
       when '.'
-        self[box[1]+m] = ']'
-        self[box[1]] = '['
-        self[box[0]] = '.'
         true
       when '['
-        move_box(box[1]+m, m) && move_box(box[0], m)
+        can_move_box?(box[1]+m, m)
       else
         false
       end
-    when dir[:north], dir[:south]
+    else
       case [self[box[0]+m], self[box[1]+m]]
       when ['.', '.']
-        self[box[0]] = self[box[1]] = '.'
-        self[box[0]+m] = '['
-        self[box[1]+m] = ']'
         true
       when ['[', ']']
-        move_box(box[0]+m, m) && move_box(box[0], m)
+        can_move_box?(box[0]+m, m)
       when [']', '[']
-        # if moving box 0 succeeds but moving box 1 fails then we have to
-        # undo the first
-        if move_box(box[0]+m, m)
-          if move_box(box[1]+m, m)
-            move_box(box[0], m)
-          else
-            move_box(box[0]+m+m, -m)
-            false
-          end
-        else
-          false
-        end
+        can_move_box?(box[0]+m, m) && can_move_box?(box[1]+m, m)
       else
         false
       end
     end
   end
 
-  # def move_box(v, dir)
-  #   case dir
-  #   when directions[:west], directions[:east]
-  #     case self[v+2*dir]
-  #     when '.'
-  #       # Space to move the box into
-  #       self[v+2*dir] = self[v+dir]
-  #       self[v+dir] = self[v]
-  #       self[v] = '.'
-  #       return true
-  #     when '[', ']'
-  #       if move_box(v+2*dir, dir)
-  #         self[v+2*dir] = self[v+dir]
-  #         self[v+dir] = self[v]
-  #         self[v] = '.'
-  #         return true
-  #       else
-  #         return false
-  #       end
-  #     else
-  #       false
-  #     end
-  #   else
-  #     # First, we need to find the other half of the box
-  #     whole_box = self[v] == '[' ? [v, v+directions[:east]] : [v+directions[:west], v]
-  #     p whole_box
-  #     box_space = [whole_box[0]+dir, whole_box[1]+dir]
-  #     p box_space
-  #     case [self[box_space[0]], self[box_space[1]]]
-  #     when ['.','.']
-  #       # Space to move the box into
-  #       self[box_space[0]] = '['
-  #       self[box_space[1]] = ']'
-  #       self[whole_box[0]] = self[whole_box[1]] = '.'
-  #       return true
-  #     when ['[', ']']
-  #       # Box aligned with this one
-  #       if move_box(box_space[0]+dir, dir)
-  #         self[box_space[0]] = '['
-  #         self[box_space[1]] = ']'
-  #         self[whole_box[0]] = self[whole_box[1]] = '.'
-  #         return true
-  #       else
-  #         return false
-  #       end
-  #     when [']', '[']
-  #       # Two boxes
-  #       if move_box(box_space[0]+dir, dir) && move_box(box_space[1]+dir, dir)
-  #         self[box_space[0]] = '['
-  #         self[box_space[1]] = ']'
-  #         self[whole_box[0]] = self[whole_box[1]] = '.'
-  #         return true
-  #       else
-  #         return false
-  #       end
-  #     else
-  #       return false
-  #     end
-  #   end
-  # end
+  def move_box(v, m)
+    # We need to test if we can move before we move anything
+    return unless can_move_box?(v, m)
+    box = get_box(v)
+    case m
+    when dir[:west]
+      move_box(box[0]+m, m) if self[box[0]+m] == ']'
+      self[box[0]+m] = '['
+      self[box[0]] = ']'
+      self[box[1]] = '.'
+    when dir[:east]
+      move_box(box[1]+m, m) if self[box[1]+m] == '['
+      self[box[1]+m] = ']'
+      self[box[1]] = '['
+      self[box[0]] = '.'
+    else
+      move_box(box[0]+m, m) if self[box[0]+m] == '['
+      if self[box[0]+m] == ']'
+        move_box(box[0]+m, m)
+        move_box(box[1]+m, m)
+      end
+      self[box[0]] = self[box[1]] = '.'
+      self[box[0]+m] = '['
+      self[box[1]+m] = ']'
+    end
+  end
 
   # Call move_robot! on every instruction
   def move_all!
