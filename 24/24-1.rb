@@ -7,7 +7,7 @@ Gate = Struct.new(:a,:b,:op,:out) do
   attr_accessor :open_value
 
   def value(av, bv)
-    self.open_value ||= case op
+    @open_value ||= case op
     when 'AND'
       av && bv
     when 'OR'
@@ -18,7 +18,7 @@ Gate = Struct.new(:a,:b,:op,:out) do
   end
 
   def open?
-    !!open_value
+    !open_value.nil?
   end
 end
 
@@ -32,38 +32,44 @@ class FruitMonitor
     @output = {}
     io.each do |line|
       /(...): (\d)/.match(line)&.captures&.then {|r,v| registers[r] = (v=='1')}
-      /(...) (...) (...) -> (...)/.match(line)&.captures&.then {|a,op,b,out| gates << Gate.new(a,b,op,out)}
+      /(...) (...?) (...) -> (...)/.match(line)&.captures&.then {|a,op,b,out| gates << Gate.new(a,b,op,out)}
     end
   end
 
-  # Run until all the gates are open
+  # tick until all the gates are open
   def run!
-    while registers.keys.all? {|sym| fire!(sym, registers[sym])}
+    while tick!
     end
   end
 
-  # Given a symbol and a bool value, set that register and then attempt to
-  # open all gates. Returns false if no gates opened - the system is stable
-  def fire!(sym, val)
-    registers[sym] = val
-    # If it starts with a z, set the output too
-    output[sym] = val if sym[0] == 'z'
-    l = gates.count(&:open?)
-    gates.each {|g| open!(g)}
-    return gates.count(&:open?) != l
+  # process gates and return true if any opened for the first time
+  def tick!
+    gates.map {process_gate _1}.any?
   end
 
-  # Open the given gate by firing it and deleting it from gates
-  def open!(gate)
+  # Process the current gate if possible and return true if this is the
+  # first time it opened
+  def process_gate(gate)
+    gate_was_open = gate.open?
     if registers.key?(gate.a) && registers.key?(gate.b)
-      fire!(gate.out, gate.value(registers[gate.a], registers[gate.b]))
+      registers[gate.out] = gate.value(registers[gate.a], registers[gate.b])
+      if gate.out[0] == 'z'
+        output[gate.out] = registers[gate.out]
+      end
+      return !gate_was_open
     end
+    false
+  end
+
+  # The binary value of all the z registers
+  def value
+    # This could be _much_ more efficient than using strings but it's probably
+    # fine
+    output.keys.sort.reverse.map {|k| output[k] ? '1' : '0'}.join.to_i(2)
   end
 
 end
 
 fm = FruitMonitor.new(ARGF)
 fm.run!
-pp fm.registers
-pp fm.gates
-p fm.output
+p fm.value
